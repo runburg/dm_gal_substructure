@@ -239,12 +239,12 @@ def psh(params_dict, infer_values=False, plot=False):
     if infer_values is True:
         func = pf_vals.real * flux
         max_index = np.argmax(func)
-        start = max_index - np.argmax(np.flip(func[:max_index]) < (func[max_index] / 1e5))
-        finish = np.argmax(func[max_index:] < (func[max_index] / 1e6))
-        if finish <= max_index:
-            finish = -1
-        else:
-            finish += max_index
+        finish = max_index + np.argmax(func[max_index+1:] < (func[max_index] / 1e7))
+        start = max_index - np.argmax(np.flip(func[:max_index]) < (func[max_index] / 1e7))
+        # if finish <= max_index:
+        #     finish = -1
+        # else:
+        #     finish += max_index
         pf_vals = pf_vals[start:finish]
         flux = flux[start:finish]
 
