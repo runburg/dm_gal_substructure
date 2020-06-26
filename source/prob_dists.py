@@ -153,7 +153,7 @@ def ft_p1(p1_vals, fluxes, log_k_min, log_k_max, N_k, **kwargs):
     k = np.logspace(log_k_min, log_k_max, num=N_k)
     func = p1_vals * np.exp(2j * np.pi * fluxes * k[:, np.newaxis])
 
-    ft_p1 = integrate.simps(func, fluxes, axis=1)
+    ft_p1 = np.trapz(func, fluxes, axis=1)
 
     return ft_p1, k
 
@@ -254,7 +254,55 @@ def psh(params_dict, infer_values=False, plot=False):
     print(f'\mu \int F P1: {expec}')
     print(f' \int F Psh: {reali}')
     print(f'percent error = {round((reali - expec)/(expec)*100, 2)}%\n')
-    
+
     return pf_vals, flux
+
+
+def psh_of_psi(params, psi_min=40, psi_max=180, num_psi=14, plot=False, infer_values=True):
+    """Get psh values as a function of psi."""
+    psis = np.linspace(psi_min, psi_max, num=num_psi)
+
+    psh_vals_over_psi = []
+    fluxes = []
+
+    for psi in psis:
+        params['psi'] = psi
+        print('Angle:', psi)
+
+        pshvals, fxs = psh(params, plot=plot, infer_values=infer_values)
+        psh_vals_over_psi.append(pshvals)
+        fluxes.append(fxs)
+
+    return np.array(psh_vals_over_psi), np.array(fluxes), psis
+
+
+def interp_and_save_psh(params, psh, flux, psi, return_interp2d=True, outfile='./output/pshfunc.npz'):
+    """Get a convenient form for psh and save arrays."""
+    from scipy import interpolate as intp
+
+    fluxes = np.logspace(params['psh_log_f_min'], params['psh_log_f_max'], num=250)
+    interp_array = np.zeros((len(fluxes), len(psi)))
+
+    for i, pshvals in enumerate(psh):
+        func = intp.interp1d(flux[i], pshvals.real, fill_value=0, bounds_error=0)
+        interp_array[:, i] = func(fluxes)
+
+    np.savez(outfile, flux=fluxes, psi=psi, psh=interp_array)
+
+    func2d = intp.interp2d(psi, fluxes, interp_array, bounds_error=False, fill_value=0)
+
+    np.save(outfile + "2d_interp.npz", func2d)
+
+    if return_interp2d is True:
+        print("Returned P_sh(\psi, flux)")
+        return func2d
+
+    return interp_array, fluxes, psi
+
+
+def pc(params, psh_2dfunc, fluxes, psi, exposure, background=False, countmax=20):
+    """Compute P(C) for ensemble of halos."""
+    counts = np.linspace(0, countmax, num=countmax // 2 + 1)
+
 
 

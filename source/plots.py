@@ -168,4 +168,26 @@ def check_psh_plot(fluxes, psh_vals, i1=0, i2=-1, j=[]):
     return fig, ax
 
 
+def psh_func_psi_plot(psh_vals_over_psi, fluxes, psis, outfile='./output/psh_of_psi.png'):
+    """Plot Psh as a function of psi."""
+    from matplotlib import cm
+    colors = cm.viridis(np.linspace(0, 1, num=len(psis)))
 
+    fig, ax = plt.subplots()
+
+    for pshvals, fxs, psi, col in zip(psh_vals_over_psi, fluxes, psis, colors):
+        ax.plot(fxs, fxs * pshvals.real, label=rf"{psi}$^\circ$", color=col)
+
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel(r'F [photons cm$^{-2}$ yr$^{-1}$]')
+    ax.set_ylabel('F x Psh')
+
+    cbarlabs = np.arange(min(psis), max(psis) + 1, step=10)
+    cbar = fig.colorbar(cm.ScalarMappable(cmap=cm.viridis), ticks=np.linspace(0, 1, num=len(cbarlabs)))
+    cbar.set_label(r'$\psi$[$^\circ$]', rotation=270, labelpad=2)
+    cbar.ax.set_yticklabels(cbarlabs)
+
+    fig.savefig(outfile)
+
+    return fig, ax
