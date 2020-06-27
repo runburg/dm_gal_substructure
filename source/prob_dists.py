@@ -10,7 +10,6 @@ import numpy as np
 from scipy import integrate, stats
 from scipy.interpolate import interp1d
 import plots
-import healpy
 import random
 
 
@@ -313,6 +312,7 @@ def pc(psh_2dfunc, fluxes, psi, exposure, background=False, countmax=20):
 
 
 def generate_skymap_sample_pc(p, pc_of_psi, cut_out_band=40, output_path='./output/', print_updates=False):
+    import healpy
     nside = p['nside']
     npix = healpy.nside2npix(nside)
     pixel_counts = np.ones(npix) * healpy.pixelfunc.UNSEEN
