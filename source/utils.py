@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from astropy.io import fits
+import json
 
 
 def colorbar_for_subplot(fig, axs, cmap, image):
@@ -135,3 +136,25 @@ def load_wcs(path, which_hdu=0):
 
     return wcs, hdu
 
+
+def read_param_file(infile):
+    with open(infile, 'r') as f:
+        params = json.load(f)
+
+    n = params['n']
+    params['mean_params'] = {'a':77.4, 'b':0.87+0.31*n, 'c':-0.23-0.04*n}
+    params['omega_pixel'] = 4.*np.pi/(12*params['nside']**2.) # sr
+
+    with open(infile, 'w') as f:
+        json.dump(params, f, indent=0)
+
+    return params
+
+
+def update_params(param_file, param_dict, key, val):
+    param_dict[key] = val
+
+    with open(param_file, 'w') as f:
+        json.dump(param_dict, f, indent=0)
+
+    return param_dict

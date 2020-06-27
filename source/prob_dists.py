@@ -10,6 +10,8 @@ import numpy as np
 from scipy import integrate, stats
 from scipy.interpolate import interp1d
 from source import plots
+import healpy
+import random
 
 
 def gaussian_mean(M, r, a=77.4, b=0.87, c=-0.23, fsusy=1):
@@ -300,9 +302,39 @@ def interp_and_save_psh(params, psh, flux, psi, return_interp2d=True, outfile='.
     return interp_array, fluxes, psi
 
 
-def pc(params, psh_2dfunc, fluxes, psi, exposure, background=False, countmax=20):
+def pc(psh_2dfunc, fluxes, psi, exposure, background=False, countmax=20):
     """Compute P(C) for ensemble of halos."""
-    counts = np.linspace(0, countmax, num=countmax // 2 + 1)
+    from scipy.stats import poisson
+
+    counts = np.arange(0, countmax + 1)
+    pcvals = np.trapz(pshfunc2d(psi, fluxes).flatten() * poisson.pmf(counts[:, np.newaxis], exposure * fluxes), fluxes, axis=-1)
+
+    return pcvals, counts
 
 
+def generate_skymap_sample_pc(p, pc_of_psi, cut_out_band=40, output_path='./output/', print_updates=False):
+    nside = p['nside']
+    npix = healpy.nside2npix(nside)
+    pixel_counts = np.ones(npix) * healpy.pixelfunc.UNSEEN
 
+    lon, lat = healpy.pix2ang(nside, range(npix), lonlat=True)
+
+    good_indices = (np.abs(lat) >= cut_out_band)
+
+    ang_dists = np.rad2deg(np.arccos(np.cos(np.deg2rad(lon[good_indices])) * np.cos(np.deg2rad(lat[good_indices]))))
+
+    subsample = ang_dists[good_indices]
+    sub_counts = np.zeros(len(subsample))
+    for i, psi in enumerate(subsample):
+        if print_updates is True:
+            if i % 100000 == 0:
+                print(i, '/', len(subsample))
+        #     print(psi)
+        pcvals = pc_of_psi(abs(psi))
+        sub_counts[i] = np.random.choice(np.arange(len(pcvals)), size=1, p=pcvals/np.sum(pcvals))
+
+    pixel_counts[good_indices] = sub_counts
+
+    np.save(f"{output_path}n{p['n']}_skymap_{str(random.randint(0, 99999)).rjust(5, '0')}.npy", pixel_counts)
+
+    return pixel_counts
