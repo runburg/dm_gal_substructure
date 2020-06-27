@@ -9,9 +9,10 @@ Description:
 import numpy as np
 from scipy import integrate, stats
 import sys
+print(sys.path)
 from scipy.interpolate import interp1d
-from source import prob_dists as pd
-from source import utils
+import prob_dists as pd
+import utils
 
 params = p = utils.read_param_file(sys.argv[1])
 

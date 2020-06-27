@@ -9,8 +9,8 @@ Description:
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
-from source import utils
-from source import prob_dists as pd
+import utils
+import prob_dists as pd
 
 
 def p1_plot(params, psi=40, n_list=[-1, 0, 2, 4], outfile='./output/p1_plot.png'):

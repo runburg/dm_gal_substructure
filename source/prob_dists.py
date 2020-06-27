@@ -9,7 +9,7 @@ Description: Probability distributions and helper functions for DM annihilating 
 import numpy as np
 from scipy import integrate, stats
 from scipy.interpolate import interp1d
-from source import plots
+import plots
 import healpy
 import random
 
