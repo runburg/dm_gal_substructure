@@ -7,9 +7,9 @@
 #SBATCH --nodes=1
 #SBATCH --tasks-per-node=1
 #SBATCH --cpus-per-task=20
-#SBATCH --mem=64G ## max amount of memory per node you require
+#SBATCH --mem=48G ## max amount of memory per node you require
 
-#SBATCH --core-spec=0 ## Uncomment to allow jobs to request all cores on a node    
+##SBATCH --core-spec=0 ## Uncomment to allow jobs to request all cores on a node    
 
 #SBATCH --error=swavepsh-%A.err ## %A - filled with jobid
 #SBATCH --output=swavepsh-%A.out ## %A - filled with jobid
