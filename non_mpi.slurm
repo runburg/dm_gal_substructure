@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=swavepsh
+#SBATCH --job-name=swave128
 #SBATCH --partition=shared
 ## 3 day max run time for public partitions, except 4 hour max runtime for the sandbox partition
 #SBATCH --time=0-01:00:00 ## time format is DD-HH:MM:SS
@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --tasks-per-node=1
 #SBATCH --cpus-per-task=20
-#SBATCH --mem=128G ## max amount of memory per node you require
+#SBATCH --mem=64G ## max amount of memory per node you require
 
 #SBATCH --core-spec=0 ## Uncomment to allow jobs to request all cores on a node    
 

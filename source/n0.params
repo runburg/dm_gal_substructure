@@ -15,12 +15,12 @@
 "n": 0,
 "log_flux_min": -15,
 "log_flux_max": -5,
-"N": 10000,
+"N": 8000,
 "log_k_min": -3,
 "log_k_max": 6,
-"N_k": 100000,
+"N_k": 125000,
 "psh_log_f_min": -5.7,
-"psh_log_f_max": -3.7,
+"psh_log_f_max": -3,
 "N_psh": 500,
 "omega_pixel": 6.391586616190171e-05
 }
