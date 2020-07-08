@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --tasks-per-node=1
 #SBATCH --cpus-per-task=20
-#SBATCH --mem=48G ## max amount of memory per node you require
+#SBATCH --mem=100G ## max amount of memory per node you require
 
 ##SBATCH --core-spec=0 ## Uncomment to allow jobs to request all cores on a node    
 

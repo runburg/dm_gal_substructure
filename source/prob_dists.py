@@ -203,7 +203,7 @@ def psh(params_dict, infer_values=False, plot=False):
         log_k_min = fluxes[p1_vals.argmax()]
         log_k_max = log_k_min
         log_diff = 0.5
-        threshold = 0.995
+        threshold = 0.9
         val = 1
         while val > threshold:
             log_k_min += log_diff
@@ -240,14 +240,16 @@ def psh(params_dict, infer_values=False, plot=False):
     if infer_values is True:
         func = pf_vals.real * flux
         max_index = np.argmax(func)
-        finish = max_index + np.argmax(func[max_index+1:] < (func[max_index] / 1e7))
-        start = max_index - np.argmax(np.flip(func[:max_index]) < (func[max_index] / 1e7))
-        # if finish <= max_index:
-        #     finish = -1
-        # else:
-        #     finish += max_index
-        pf_vals = pf_vals[start:finish]
-        flux = flux[start:finish]
+        print(max_index, len(func))
+        if max_index < len(func)/2:
+            finish = max_index + np.argmax(func[max_index+1:] < (func[max_index] / 1e6))
+            start = max_index - np.argmax(np.flip(func[:max_index]) < (func[max_index] / 1e6))
+            # if finish <= max_index:
+            #     finish = -1
+            # else:
+            #     finish += max_index
+            pf_vals = pf_vals[start:finish]
+            flux = flux[start:finish]
 
     print("Finished Psh computation")
     expec = muu * np.trapz(fluxes * p1_vals, fluxes)
