@@ -8,7 +8,7 @@ Description: Probability distributions and helper functions for DM annihilating 
 """
 import numpy as np
 from scipy import integrate, stats
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, interp2d
 import plots
 import random
 
@@ -313,7 +313,7 @@ def pc(psh_2dfunc, fluxes, psi, exposure, background=False, countmax=20):
     return pcvals, counts
 
 
-def generate_skymap_sample_pc(p, pc_of_psi, cut_out_band=40, output_path='./output/', print_updates=False):
+def generate_skymap_sample_pc(p, pc_of_psi, cut_out_band=40, output_path='./output/', print_updates=False, save_output=False, return_subcounts=False):
     import healpy
     nside = p['nside']
     npix = healpy.nside2npix(nside)
@@ -321,22 +321,73 @@ def generate_skymap_sample_pc(p, pc_of_psi, cut_out_band=40, output_path='./outp
 
     lon, lat = healpy.pix2ang(nside, range(npix), lonlat=True)
 
-    good_indices = (np.abs(lat) >= cut_out_band)
+    good_indices = (abs(lat) >= cut_out_band)
 
     ang_dists = np.rad2deg(np.arccos(np.cos(np.deg2rad(lon[good_indices])) * np.cos(np.deg2rad(lat[good_indices]))))
 
-    subsample = ang_dists[good_indices]
-    sub_counts = np.zeros(len(subsample))
-    for i, psi in enumerate(subsample):
+    sub_counts = np.zeros(len(ang_dists))
+    for i, psi in enumerate(ang_dists):
         if print_updates is True:
-            if i % 100000 == 0:
-                print(i, '/', len(subsample))
+            if i % 10000 == 0:
+                print(i, '/', len(ang_dists))
         #     print(psi)
         pcvals = pc_of_psi(abs(psi))
         sub_counts[i] = np.random.choice(np.arange(len(pcvals)), size=1, p=pcvals/np.sum(pcvals))
 
-    pixel_counts[good_indices] = sub_counts
+        pixel_counts[good_indices] = sub_counts
 
-    np.save(f"{output_path}n{p['n']}_skymap_{str(random.randint(0, 99999)).rjust(5, '0')}.npy", pixel_counts)
+    if save_output is True:
+        outfile = f"{output_path}n{p['n']}_skymap_{str(random.randint(0, 99999)).rjust(5, '0')}.npy"
+        np.save(outfile, pixel_counts)
+        print("saved in", outfile)
+
+    if return_subcounts is True:
+        return sub_counts, ang_dists
 
     return pixel_counts
+
+
+def likelihood(p, psh, subcounts, fluxes, counts, fwimp_limits=(-5, 5, 20)):
+    from scipy.stats import poisson
+
+    exposure = p['exposure']
+
+    fwimps = np.logspace(*fwimp_limits)
+    print(fwimps)
+    S = np.zeros(fwimps.shape)
+
+    for i, f in enumerate(fwimps):
+        print(i, '/', len(fwimps))
+        p['fwimp'] = f
+
+        pc = np.trapz(1 / f * psh[:, :, np.newaxis] * poisson.pmf(counts[np.newaxis, np.newaxis, :], exposure * f * fluxes[:, np.newaxis, np.newaxis]), f * fluxes, axis=0)
+
+        pixel_probs = pc[np.arange(len(pc)), subcounts]
+
+        S[i] = -2 * np.sum(np.log(pixel_probs))
+
+    return S, fwimps
+
+
+def poisson_likelihood(p, psh, subcounts, fluxes, counts, fwimp_limits=(-5, 5, 20)):
+    from scipy.stats import poisson
+
+    exposure = p['exposure']
+
+    fwimps = np.logspace(*fwimp_limits)
+    print(fwimps)
+    S = np.zeros(fwimps.shape)
+
+    for i, f in enumerate(fwimps):
+        print(i, '/', len(fwimps))
+        p['fwimp'] = f
+
+        pc = poisson.pmf(counts[np.newaxis, :], exposure * f * np.trapz(fluxes[:, np.newaxis] * psh, f * fluxes, axis=0)[:, np.newaxis])
+
+        pixel_probs = pc[np.arange(len(pc)), subcounts]
+
+        S[i] = -2 * np.sum(np.log(pixel_probs))
+
+    return S, fwimps
+
+
