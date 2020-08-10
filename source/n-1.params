@@ -19,7 +19,7 @@
 "log_k_min": 0,
 "log_k_max": 5,
 "N_k": 250000,
-"psh_log_f_min": -3,
+"psh_log_f_min": -6,
 "psh_log_f_max": -2,
 "N_psh": 500,
 "omega_pixel": 6.391586616190171e-05,
