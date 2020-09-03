@@ -313,7 +313,7 @@ def pc(psh_2dfunc, fluxes, psi, exposure, background=False, countmax=20):
     return pcvals, counts
 
 
-def generate_skymap_sample_pc(p, pc_of_psi, cut_out_band=40, output_path='./output/', print_updates=False, save_output=False, return_subcounts=False):
+def generate_skymap_sample_pc(p, pc_of_psi, cut_out_band=40, output_path='./output/', print_updates=False, save_output=False, return_subcounts=False, with_bg=True):
     import healpy
     nside = p['nside']
     npix = healpy.nside2npix(nside)
@@ -325,14 +325,25 @@ def generate_skymap_sample_pc(p, pc_of_psi, cut_out_band=40, output_path='./outp
 
     ang_dists = np.rad2deg(np.arccos(np.cos(np.deg2rad(lon[good_indices])) * np.cos(np.deg2rad(lat[good_indices]))))
 
+    if with_bg is True:
+        gal_bg = np.load(p['gal_flux_bg_file'])[good_indices] * p['exposure']
+        iso_bg = p['iso_flux_bg'] * p['exposure']
+        # print(np.mean(gal_bg), iso_bg)
+
+        bg_counts = stats.poisson.rvs(gal_bg + iso_bg)
+    else:
+        bg_counts = 0
+
     sub_counts = np.zeros(len(ang_dists))
+    sub_counts += bg_counts
+
     for i, psi in enumerate(ang_dists):
         if print_updates is True:
             if i % 10000 == 0:
                 print(i, '/', len(ang_dists))
         #     print(psi)
         pcvals = pc_of_psi(abs(psi))
-        sub_counts[i] = np.random.choice(np.arange(len(pcvals)), size=1, p=pcvals/np.sum(pcvals))
+        sub_counts[i] += np.random.choice(np.arange(len(pcvals)), size=1, p=pcvals/np.sum(pcvals))
 
         pixel_counts[good_indices] = sub_counts
 
@@ -347,24 +358,24 @@ def generate_skymap_sample_pc(p, pc_of_psi, cut_out_band=40, output_path='./outp
     return pixel_counts
 
 
-def likelihood(p, psh, subcounts, fluxes, counts, fwimp_limits=(-5, 5, 20)):
+def likelihood(p, psh, subcounts, fluxes, counts, fwimp_limits=(-5, 5, 20), bg_count=0):
     from scipy.stats import poisson
 
     exposure = p['exposure']
 
     fwimps = np.logspace(*fwimp_limits)
-    print(fwimps)
+    # print(fwimps)
     S = np.zeros(fwimps.shape)
 
     for i, f in enumerate(fwimps):
         print(i, '/', len(fwimps))
-        p['fwimp'] = f
+        # p['fwimp'] = f
 
-        pc = np.trapz(1 / f * psh[:, :, np.newaxis] * poisson.pmf(counts[np.newaxis, np.newaxis, :], exposure * f * fluxes[:, np.newaxis, np.newaxis]), f * fluxes, axis=0)
+        pc = np.trapz(1 / f * psh[:, :, np.newaxis] * poisson.pmf(counts[np.newaxis, np.newaxis, :], exposure * f * fluxes[:, np.newaxis, np.newaxis] + bg_count[np.newaxis, :, np.newaxis]), f * fluxes, axis=0)
 
         pixel_probs = pc[np.arange(len(pc)), subcounts]
 
-        S[i] = -2 * np.sum(np.log(pixel_probs))
+        S[i] = -2 * np.sum(np.log(pixel_probs, where=(pixel_probs > 0)))
 
     return S, fwimps
 
@@ -389,5 +400,4 @@ def poisson_likelihood(p, psh, subcounts, fluxes, counts, fwimp_limits=(-5, 5, 2
         S[i] = -2 * np.sum(np.log(pixel_probs))
 
     return S, fwimps
-
 

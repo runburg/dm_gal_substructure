@@ -22,5 +22,8 @@
 "psh_log_f_min": -5,
 "psh_log_f_max": -3.5,
 "N_psh": 500,
-"omega_pixel": 6.391586616190171e-05
+"omega_pixel": 6.391586616190171e-05,
+"exposure": 5600.0,
+"iso_flux_bg": 0.08601219861750009,
+"gal_flux_bg_file": "./output/gal_flux_bg.npy"
 }
