@@ -527,12 +527,11 @@ def generate_skymap_sample_pc(p, pc_of_psi, cut_out_band=40, output_path='./outp
     return pixel_counts
 
 
-def likelihood(p, psh, subcounts, fluxes, counts, fwimp_limits=(-5, 5, 20), bg_count=np.array([0]), verbose=False):
+def likelihood(p, psh, subcounts, fluxes, counts, fwimps, bg_count=np.array([0]), verbose=False):
     from scipy.stats import poisson
 
     exposure = p['exposure']
 
-    fwimps = np.logspace(*fwimp_limits)
     # print(fwimps)
     S = np.zeros(fwimps.shape)
 
@@ -549,21 +548,21 @@ def likelihood(p, psh, subcounts, fluxes, counts, fwimp_limits=(-5, 5, 20), bg_c
         # pixel_probs = pc[np.arange(len(pc)), subcounts]
         pixel_probs = pc
 
-        print('zero prob pixels', np.sum(pixel_probs <= 0))
+        if np.any(pixel_probs <=0):
+            print('zero prob pixels', np.sum(pixel_probs <= 0), np.sum(pixel_probs == 0))
+
         S[i] = -2 * np.sum(np.log(pixel_probs, where=(pixel_probs > 0)))
 
-    return S, fwimps
+    return S
 
-
-def poisson_likelihood(p, psh, subcounts, fluxes, counts, fwimp_limits=(-5, 5, 20), bg_count=np.array([0]), verbose=False):
+def poisson_likelihood(p, psh, subcounts, fluxes, counts, fwimps, bg_count=np.array([0]), verbose=False):
     from scipy.stats import poisson
 
     exposure = p['exposure']
 
-    fwimps = np.logspace(*fwimp_limits)
     S = np.zeros(fwimps.shape)
 
-    mean_f = np.trapz(fluxes[:, np.newaxis] * psh, fluxes[:, np.newaxis], axis=0)
+    mean_f = integrate.simps(fluxes[:, np.newaxis] * psh, fluxes[:, np.newaxis], axis=0)
 
     for i, f in enumerate(fwimps):
         if verbose is True:
@@ -574,9 +573,10 @@ def poisson_likelihood(p, psh, subcounts, fluxes, counts, fwimp_limits=(-5, 5, 2
         # pixel_probs = pc[np.arange(len(pc)), subcounts]
         pixel_probs = pc
 
-        print('zero prob pixels', np.sum(pixel_probs <= 0))
+        if np.any(pixel_probs <=0):
+            print('zero prob pixels', np.sum(pixel_probs <= 0))
 
         S[i] = -2 * np.sum(np.log(pixel_probs, where=(pixel_probs>0)))
 
-    return S, fwimps
+    return S
 
