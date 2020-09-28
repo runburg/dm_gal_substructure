@@ -540,8 +540,8 @@ def likelihood(p, psh, subcounts, fluxes, counts, fwimps, bg_count=np.array([0])
             print(i, '/', len(fwimps))
         # p['fwimp'] = f
 
-        pc = integrate.simps(1/f * psh * poisson.pmf(subcounts[np.newaxis, :], exposure * f * fluxes[:, np.newaxis] + bg_count[np.newaxis, :]), f * fluxes, axis=0)
-        # pc = np.trapz(1/f * psh * poisson.pmf(subcounts[np.newaxis, :], exposure * f * fluxes[:, np.newaxis] + bg_count[np.newaxis, :]), f * fluxes, axis=0)
+        # pc = integrate.simps(1/f * psh * poisson.pmf(subcounts[np.newaxis, :], exposure * f * fluxes[:, np.newaxis] + bg_count[np.newaxis, :]), f * fluxes, axis=0)
+        pc = np.trapz(1/f * psh * poisson.pmf(subcounts[np.newaxis, :], exposure * f * fluxes[:, np.newaxis] + bg_count[np.newaxis, :]), f * fluxes, axis=0)
         # pc = np.trapz(1 / f * psh[:, :, np.newaxis] * poisson.pmf(counts[np.newaxis, np.newaxis, :], exposure * f * fluxes[:, np.newaxis, np.newaxis] + bg_count[np.newaxis, :, np.newaxis]), f * fluxes, axis=0)
 
         # print(pc)
