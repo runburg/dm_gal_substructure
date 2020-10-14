@@ -4,7 +4,7 @@
 "psi": 40,
 "M_min": 0.01,
 "M_max": 10000000000.0,
-"fwimp": 0.01,
+"fwimp": 1.7896346444957159,
 "mean_params": {
 "a": 77.4,
 "b": 0.87,
@@ -25,5 +25,7 @@
 "omega_pixel": 6.391586616190171e-05,
 "exposure": 5570.423008216337,
 "iso_flux_bg": 0.0008939106670451649,
-"gal_flux_bg_file": "./output/gal_flux_bg.npy"
+"gal_flux_bg_file": "./output/gal_flux_bg.npy",
+"bg": 1,
+"beg": 1
 }

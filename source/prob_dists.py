@@ -320,7 +320,7 @@ def psh_som(ang_dists, input_file='./output/n-1_pshfunc.npz', return_all=False):
 
     # restrict to valid range of flux calculation
     low_lim = 150
-    valid_lim = -50
+    valid_lim = -45
     fluxes = fluxes[low_lim:valid_lim]
     psh2d = psh2d[low_lim:valid_lim]
 
@@ -413,98 +413,11 @@ def generate_skymap_sample_pc_2(p, pshfunc2d, fluxes, cut_out_band=40, output_pa
         iso_bg = p['iso_flux_bg'] * p['exposure']
         # print(np.mean(gal_bg), iso_bg)
         bg_counts = gal_bg + iso_bg
-        print('got background', np.mean(bg_counts))
+        stats.poisson.rvs(bg_counts)
     else:
         bg_counts = 0
         gal_bg = 0
         iso_bg = 0
-
-    mean_f = f * np.trapz(fluxes[:, np.newaxis] * pshfunc2d(np.abs(ang_dists), fluxes), fluxes[:, np.newaxis], axis=0)
-    mean_f *= exposure
-    mean_f += bg_counts
-    # nominal_counts = np.arange(int(-2*np.std(mean_f)), int(2*np.std(mean_f)))
-    nominal_counts = np.arange(-40, 40)
-    print('count len', len(nominal_counts))
-    counts = nominal_counts[np.newaxis, :].astype(np.int16) + mean_f[:, np.newaxis].astype(np.int16)
-    counts[counts<0] = 0
-
-    # mean_f = f * np.trapz(fluxes * pshfunc2d(np.abs(ang_dists).min(), fluxes).flatten(), fluxes)
-    # mean_count = (mean_f * exposure + np.mean(bg_counts)).astype(np.int64)
-    # lower_count = mean_count
-    # lower_count -= 4 * np.sqrt(lower_count)
-    # if lower_count < 0:
-    #     lower_count = 0
-    # upper_count = mean_count
-    # upper_count += 4 * np.sqrt(upper_count)
-    # counts = np.arange(lower_count, upper_count)
-    # if counts[-1] > 50:
-    #     print('largest count is', counts[-1], '...this may take a while')
-
-    pcvals = np.trapz(1/f * pshfunc2d(ang_dists, fluxes)[:, :, np.newaxis] * stats.poisson.pmf(counts[np.newaxis, :, :], exposure * f * fluxes[:, np.newaxis, np.newaxis] + bg_counts[np.newaxis, :, np.newaxis]), f * fluxes, axis=0)
-    
-    if np.any(np.sum(pcvals, axis=-1) < 0.9):
-        print('calculated pc does not integrate to 1. potentially due to insufficient count range. consider increasing the min/max allowed counts', np.sum(np.sum(pcvals, axis=-1) < 0.9))
-    pcvals /= np.sum(pcvals, axis=-1)[:, np.newaxis]
-
-    cum_pc = pcvals.cumsum(axis=1)
-    rand_vals = np.random.rand(len(cum_pc), 1)
-    sub_counts = (rand_vals < cum_pc).argmax(axis=1)
-    sub_counts += counts[:, 0]
-    # sub_counts += lower_count
-
-    # for i, psi in enumerate(ang_dists):
-    #     if print_updates is True:
-    #         if i % 10000 == 0:
-    #             print(i, '/', len(ang_dists))
-    #     #     print(psi)
-    #     pcvals = pc_of_psi(abs(psi))
-    #     sub_counts[i] += np.random.choice(np.arange(len(pcvals)), size=1, p=pcvals/np.sum(pcvals))
-
-    pixel_counts[good_indices] = sub_counts
-
-    if save_output is True:
-        outfile = f"{output_path}n{p['n']}_skymap_{str(random.randint(0, 99999)).rjust(5, '0')}.npy"
-        np.save(outfile, pixel_counts)
-        print("saved in", outfile)
-
-    if return_subcounts is True:
-        return sub_counts, ang_dists, gal_bg + iso_bg
-
-    return pixel_counts
-
-
-def generate_skymap_sample_pc(p, pc_of_psi, cut_out_band=40, output_path='./output/', print_updates=False, save_output=False, return_subcounts=False, with_bg=True):
-    import healpy
-    nside = p['nside']
-    npix = healpy.nside2npix(nside)
-    pixel_counts = np.ones(npix) * healpy.pixelfunc.UNSEEN
-
-    lon, lat = healpy.pix2ang(nside, range(npix), lonlat=True)
-
-    good_indices = (abs(lat) >= cut_out_band)
-
-    ang_dists = np.rad2deg(np.arccos(np.cos(np.deg2rad(lon[good_indices])) * np.cos(np.deg2rad(lat[good_indices]))))
-
-    if with_bg is True:
-        gal_bg = np.load(p['gal_flux_bg_file'])[good_indices] * p['exposure']
-        iso_bg = p['iso_flux_bg'] * p['exposure']
-        # print(np.mean(gal_bg), iso_bg)
-
-        bg_counts = stats.poisson.rvs(gal_bg + iso_bg)
-    else:
-        bg_counts = 0
-        gal_bg = 0
-        iso_bg = 0
-
-    sub_counts = np.zeros(len(ang_dists))
-    sub_counts += bg_counts
-
-    # pcvals = pc_of_psi(np.abs(ang_dists))
-    # pcvals /= np.sum(pcvals, axis=-1)[:, np.newaxis]
-
-    # cum_pc = pcvals.cumsum(axis=1)
-    # rand_vals = np.random.rand(len(cum_pc), 1)
-    # sub_counts += (rand_vals < pcvals).argmax(axis=1)
 
     for i, psi in enumerate(ang_dists):
         if print_updates is True:
@@ -527,7 +440,67 @@ def generate_skymap_sample_pc(p, pc_of_psi, cut_out_band=40, output_path='./outp
     return pixel_counts
 
 
-def likelihood(p, psh, subcounts, fluxes, counts, fwimps, bg_count=np.array([0]), verbose=False):
+def generate_skymap_sample_pc(p, pc_of_psi, ang_dists, good_indices, cut_out_band=40, output_path='./output/', print_updates=False, save_output=False, return_subcounts=False, bg_counts=None):
+    import healpy
+    nside = p['nside']
+    npix = healpy.nside2npix(nside)
+    pixel_counts = np.ones(npix) * healpy.pixelfunc.UNSEEN
+
+    if bg_counts is not None:
+        bg_counts = stats.poisson.rvs(bg_counts)
+    else:
+        bg_counts = 0
+
+    sub_counts = np.zeros(len(ang_dists))
+    sub_counts += bg_counts
+
+    # pcvals = pc_of_psi(np.abs(ang_dists))
+    # pcvals /= np.sum(pcvals, axis=-1)[:, np.newaxis]
+
+    # cum_pc = pcvals.cumsum(axis=1)
+    # rand_vals = np.random.rand(len(cum_pc), 1)
+    # sub_counts += (rand_vals <= pcvals).argmax(axis=1)
+
+    for i, psi in enumerate(ang_dists):
+        if print_updates is True:
+            if i % 10000 == 0:
+                print(i, '/', len(ang_dists))
+        #     print(psi)
+        pcvals = pc_of_psi(abs(psi))
+        pcvals /= np.sum(pcvals)
+        sub_counts[i] += np.random.choice(np.arange(len(pcvals)), size=1, p=pcvals)
+
+    pixel_counts[good_indices] = sub_counts
+
+    print("bg check:", np.allclose(sub_counts, bg_counts), np.sum(sub_counts - bg_counts))
+
+    if save_output is True:
+        outfile = f"{output_path}n{p['n']}_skymap_{str(random.randint(0, 99999)).rjust(5, '0')}.npy"
+        np.save(outfile, pixel_counts)
+        print("saved in", outfile)
+
+    if return_subcounts is True:
+        return sub_counts
+
+    return pixel_counts
+
+
+def fast_likelihood(p, psh, subcounts, fluxes, fwimps, bg_count=np.array([0]), verbose=False):
+    from scipy.stats import poisson
+
+    exposure = p['exposure']
+
+    # print(fwimps)
+    S = np.zeros(fwimps.shape)
+
+    pc = np.trapz(psh[..., np.newaxis] * poisson.pmf(subcounts[np.newaxis, :, np.newaxis], exposure * fwimps[np.newaxis, np.newaxis, :] * fluxes[:, np.newaxis, np.newaxis] + bg_count[np.newaxis, :, np.newaxis]), fluxes, axis=0)
+
+    S = -2 * np.sum(np.log(pc, where=(pc > 0)), axis=0)
+
+    return S
+
+
+def likelihood(p, psh, subcounts, fluxes, fwimps, bg_count=np.array([0]), verbose=False):
     from scipy.stats import poisson
 
     exposure = p['exposure']
@@ -548,6 +521,7 @@ def likelihood(p, psh, subcounts, fluxes, counts, fwimps, bg_count=np.array([0])
         # pixel_probs = pc[np.arange(len(pc)), subcounts]
         pixel_probs = pc
 
+        # print('likelihood pc', pc[-1])
         if np.any(pixel_probs <=0):
             print('zero prob pixels', np.sum(pixel_probs <= 0), np.sum(pixel_probs == 0))
 
@@ -555,7 +529,7 @@ def likelihood(p, psh, subcounts, fluxes, counts, fwimps, bg_count=np.array([0])
 
     return S
 
-def poisson_likelihood(p, psh, subcounts, fluxes, counts, fwimps, bg_count=np.array([0]), verbose=False):
+def poisson_likelihood(p, psh, subcounts, fluxes, fwimps, bg_count=np.array([0]), verbose=False):
     from scipy.stats import poisson
 
     exposure = p['exposure']
@@ -563,16 +537,18 @@ def poisson_likelihood(p, psh, subcounts, fluxes, counts, fwimps, bg_count=np.ar
     S = np.zeros(fwimps.shape)
 
     mean_f = integrate.simps(fluxes[:, np.newaxis] * psh, fluxes[:, np.newaxis], axis=0)
+    mmean_f = mean_f.mean()
 
     for i, f in enumerate(fwimps):
         if verbose is True:
             print(i, '/', len(fwimps))
 
-        pc = poisson.pmf(subcounts, exposure * f * mean_f + bg_count)
+        pc = poisson.pmf(subcounts, exposure * f * mmean_f + bg_count)
 
         # pixel_probs = pc[np.arange(len(pc)), subcounts]
         pixel_probs = pc
 
+        # print('likelihood pc', pc[-1])
         if np.any(pixel_probs <=0):
             print('zero prob pixels', np.sum(pixel_probs <= 0))
 
