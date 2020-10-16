@@ -440,6 +440,50 @@ def generate_skymap_sample_pc_2(p, pshfunc2d, fluxes, cut_out_band=40, output_pa
     return pixel_counts
 
 
+def generate_skymap_sample_pc_3(p, pc_of_psi, ang_dists, good_indices, cut_out_band=40, output_path='./output/', print_updates=False, save_output=False, return_subcounts=False, bg_counts=None):
+    import healpy
+    nside = p['nside']
+    npix = healpy.nside2npix(nside)
+    pixel_counts = np.ones(npix) * healpy.pixelfunc.UNSEEN
+
+    if bg_counts is not None:
+        bg_counts = stats.poisson.rvs(bg_counts)
+    else:
+        bg_counts = 0
+
+    sub_counts = np.zeros(len(ang_dists))
+    sub_counts += bg_counts
+
+    pcvals = pc_of_psi(np.abs(ang_dists))
+    pcvals /= np.sum(pcvals, axis=-1)[:, np.newaxis]
+
+    cum_pc = pcvals.cumsum(axis=1)
+    rand_vals = np.random.rand(len(cum_pc), 1)
+    sub_counts += (rand_vals <= cum_pc).argmax(axis=1)
+
+    # for i, psi in enumerate(ang_dists):
+    #     if print_updates is True:
+    #         if i % 10000 == 0:
+    #             print(i, '/', len(ang_dists))
+    #     #     print(psi)
+    #     pcvals = pc_of_psi(abs(psi))
+    #     pcvals /= np.sum(pcvals)
+    #     sub_counts[i] += np.random.choice(np.arange(len(pcvals)), size=1, p=pcvals)
+
+    pixel_counts[good_indices] = sub_counts
+
+    print("bg check:", np.allclose(sub_counts, bg_counts), np.sum(sub_counts - bg_counts))
+
+    if save_output is True:
+        outfile = f"{output_path}n{p['n']}_skymap_{str(random.randint(0, 99999)).rjust(5, '0')}.npy"
+        np.save(outfile, pixel_counts)
+        print("saved in", outfile)
+
+    if return_subcounts is True:
+        return sub_counts
+
+    return pixel_counts
+
 def generate_skymap_sample_pc(p, pc_of_psi, ang_dists, good_indices, cut_out_band=40, output_path='./output/', print_updates=False, save_output=False, return_subcounts=False, bg_counts=None):
     import healpy
     nside = p['nside']
@@ -455,20 +499,21 @@ def generate_skymap_sample_pc(p, pc_of_psi, ang_dists, good_indices, cut_out_ban
     sub_counts += bg_counts
 
     # pcvals = pc_of_psi(np.abs(ang_dists))
+    pcvals = pc_of_psi
     # pcvals /= np.sum(pcvals, axis=-1)[:, np.newaxis]
 
-    # cum_pc = pcvals.cumsum(axis=1)
-    # rand_vals = np.random.rand(len(cum_pc), 1)
-    # sub_counts += (rand_vals <= pcvals).argmax(axis=1)
+    cum_pc = pcvals.cumsum(axis=1)
+    rand_vals = np.random.rand(len(cum_pc), 1)
+    sub_counts += (rand_vals <= cum_pc).argmax(axis=1)
 
-    for i, psi in enumerate(ang_dists):
-        if print_updates is True:
-            if i % 10000 == 0:
-                print(i, '/', len(ang_dists))
-        #     print(psi)
-        pcvals = pc_of_psi(abs(psi))
-        pcvals /= np.sum(pcvals)
-        sub_counts[i] += np.random.choice(np.arange(len(pcvals)), size=1, p=pcvals)
+    # for i, psi in enumerate(ang_dists):
+    #     if print_updates is True:
+    #         if i % 10000 == 0:
+    #             print(i, '/', len(ang_dists))
+    #     #     print(psi)
+    #     pcvals = pc_of_psi(abs(psi))
+    #     pcvals /= np.sum(pcvals)
+    #     sub_counts[i] += np.random.choice(np.arange(len(pcvals)), size=1, p=pcvals)
 
     pixel_counts[good_indices] = sub_counts
 
@@ -513,13 +558,19 @@ def likelihood(p, psh, subcounts, fluxes, fwimps, bg_count=np.array([0]), verbos
             print(i, '/', len(fwimps))
         # p['fwimp'] = f
 
-        # pc = integrate.simps(1/f * psh * poisson.pmf(subcounts[np.newaxis, :], exposure * f * fluxes[:, np.newaxis] + bg_count[np.newaxis, :]), f * fluxes, axis=0)
-        pc = np.trapz(1/f * psh * poisson.pmf(subcounts[np.newaxis, :], exposure * f * fluxes[:, np.newaxis] + bg_count[np.newaxis, :]), f * fluxes, axis=0)
-        # pc = np.trapz(1 / f * psh[:, :, np.newaxis] * poisson.pmf(counts[np.newaxis, np.newaxis, :], exposure * f * fluxes[:, np.newaxis, np.newaxis] + bg_count[np.newaxis, :, np.newaxis]), f * fluxes, axis=0)
-
+        pc1 = integrate.simps(psh * poisson.pmf(subcounts[np.newaxis, :], exposure * f * fluxes[:, np.newaxis] + bg_count[np.newaxis, :]), fluxes, axis=0)
+        # pc = np.trapz(1/f * psh * poisson.pmf(subcounts[np.newaxis, :], exposure * f * fluxes[:, np.newaxis] + bg_count[np.newaxis, :]), f * fluxes, axis=0)
+        # counts = np.arange(0, subcounts.max() + 50)
+        # pc = np.trapz(psh[:, :, np.newaxis] * poisson.pmf(counts[np.newaxis, np.newaxis, :], exposure * f * fluxes[:, np.newaxis, np.newaxis] + bg_count[np.newaxis, :, np.newaxis]), fluxes, axis=0)
+        # print('bad pc norm', np.sum(np.abs(np.sum(pc, axis=-1)-1) > 1e-8))
+        # print(np.sum(pc, axis=-1))
+        # pc /= np.sum(pc, axis=-1)[:, np.newaxis]
         # print(pc)
-        # pixel_probs = pc[np.arange(len(pc)), subcounts]
-        pixel_probs = pc
+        # print(pc[np.arange(10), subcounts[:10] - subcounts.min()])
+        # print(pc1[:10])
+        # print('dif between methods', pc1 - pc[np.arange(len(pc)), subcounts - subcounts.min()])
+        # pixel_probs = pc[np.arange(len(pc)), subcounts - subcounts.min()]
+        pixel_probs = pc1
 
         # print('likelihood pc', pc[-1])
         if np.any(pixel_probs <=0):
