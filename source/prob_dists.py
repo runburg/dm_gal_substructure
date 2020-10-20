@@ -301,7 +301,8 @@ def psh_s(ang_dists, input_file='./output/n0_pshfunc.npz', return_all=False):
 
     # get psh for the angles we are considering
     psh = pshfunc2d(np.abs(ang_dists), fluxes)
-    psh /= np.trapz(psh, fluxes, axis=0)
+    psh /= integrate.simps(psh, fluxes, axis=0)
+    # psh /= np.trapz(psh, fluxes, axis=0)
 
     if return_all is True:
         return psh, pshfunc2d, fluxes, psi
@@ -330,7 +331,8 @@ def psh_som(ang_dists, input_file='./output/n-1_pshfunc.npz', return_all=False):
 
     # get psh for the angles we are considering
     psh = pshfunc2d(np.abs(ang_dists), fluxes)
-    psh /= np.trapz(psh, fluxes, axis=0)
+    psh /= integrate.simps(psh, fluxes, axis=0)
+    # psh /= np.trapz(psh, fluxes, axis=0)
 
     if return_all is True:
         return psh, pshfunc2d, fluxes, psi
@@ -517,8 +519,6 @@ def generate_skymap_sample_pc(p, pc_of_psi, ang_dists, good_indices, cut_out_ban
 
     pixel_counts[good_indices] = sub_counts
 
-    print("bg check:", np.allclose(sub_counts, bg_counts), np.sum(sub_counts - bg_counts))
-
     if save_output is True:
         outfile = f"{output_path}n{p['n']}_skymap_{str(random.randint(0, 99999)).rjust(5, '0')}.npy"
         np.save(outfile, pixel_counts)
@@ -559,6 +559,7 @@ def likelihood(p, psh, subcounts, fluxes, fwimps, bg_count=np.array([0]), verbos
         # p['fwimp'] = f
 
         pc1 = integrate.simps(psh * poisson.pmf(subcounts[np.newaxis, :], exposure * f * fluxes[:, np.newaxis] + bg_count[np.newaxis, :]), fluxes, axis=0)
+        # pc1 = np.trapz(psh * poisson.pmf(subcounts[np.newaxis, :], exposure * f * fluxes[:, np.newaxis] + bg_count[np.newaxis, :]), fluxes, axis=0)
         # pc = np.trapz(1/f * psh * poisson.pmf(subcounts[np.newaxis, :], exposure * f * fluxes[:, np.newaxis] + bg_count[np.newaxis, :]), f * fluxes, axis=0)
         # counts = np.arange(0, subcounts.max() + 50)
         # pc = np.trapz(psh[:, :, np.newaxis] * poisson.pmf(counts[np.newaxis, np.newaxis, :], exposure * f * fluxes[:, np.newaxis, np.newaxis] + bg_count[np.newaxis, :, np.newaxis]), fluxes, axis=0)
@@ -588,6 +589,7 @@ def poisson_likelihood(p, psh, subcounts, fluxes, fwimps, bg_count=np.array([0])
     S = np.zeros(fwimps.shape)
 
     mean_f = integrate.simps(fluxes[:, np.newaxis] * psh, fluxes[:, np.newaxis], axis=0)
+    # mean_f = np.trapz(fluxes[:, np.newaxis] * psh, fluxes[:, np.newaxis], axis=0)
     mmean_f = mean_f.mean()
 
     for i, f in enumerate(fwimps):
