@@ -300,6 +300,7 @@ def psh_s(ang_dists, input_file='./output/n0_pshfunc.npz', return_all=False):
     pshfunc2d = intp.interp2d(psi, fluxes, np.nan_to_num(psh2d), bounds_error=False, fill_value=0)
 
     # get psh for the angles we are considering
+    fluxes = np.logspace(np.log10(fluxes[0]), np.log10(fluxes[-1]), num=100)
     psh = pshfunc2d(np.abs(ang_dists), fluxes)
     psh /= integrate.simps(psh, fluxes, axis=0)
     # psh /= np.trapz(psh, fluxes, axis=0)
@@ -330,6 +331,7 @@ def psh_som(ang_dists, input_file='./output/n-1_pshfunc.npz', return_all=False):
     pshfunc2d = intp.interp2d(psi, fluxes, np.nan_to_num(psh2d), bounds_error=False, fill_value=0)
 
     # get psh for the angles we are considering
+    fluxes = np.logspace(np.log10(fluxes[0]), np.log10(fluxes[-1]), num=100)
     psh = pshfunc2d(np.abs(ang_dists), fluxes)
     psh /= integrate.simps(psh, fluxes, axis=0)
     # psh /= np.trapz(psh, fluxes, axis=0)
@@ -486,13 +488,13 @@ def generate_skymap_sample_pc_3(p, pc_of_psi, ang_dists, good_indices, cut_out_b
 
     return pixel_counts
 
-def generate_skymap_sample_pc(p, pc_of_psi, ang_dists, good_indices, cut_out_band=40, output_path='./output/', print_updates=False, save_output=False, return_subcounts=False, bg_counts=None):
+def generate_skymap_sample_pc(p, pc_of_psi, ang_dists, good_indices, cut_out_band=40, output_path='./output/', print_updates=False, save_output=False, return_subcounts=False, bg_counts=[]):
     import healpy
     nside = p['nside']
     npix = healpy.nside2npix(nside)
     pixel_counts = np.ones(npix) * healpy.pixelfunc.UNSEEN
 
-    if bg_counts is not None:
+    if len(bg_counts) > 1:
         bg_counts = stats.poisson.rvs(bg_counts)
     else:
         bg_counts = 0
@@ -505,9 +507,12 @@ def generate_skymap_sample_pc(p, pc_of_psi, ang_dists, good_indices, cut_out_ban
     # pcvals /= np.sum(pcvals, axis=-1)[:, np.newaxis]
 
     cum_pc = pcvals.cumsum(axis=1)
+
+    # print('cumulative pc', cum_pc[:, -1] - 1)
     rand_vals = np.random.rand(len(cum_pc), 1)
     sub_counts += (rand_vals <= cum_pc).argmax(axis=1)
 
+    # print('probs', pcvals[np.arange(0, 100, 5), sub_counts[:100:5].astype(np.int64)])
     # for i, psi in enumerate(ang_dists):
     #     if print_updates is True:
     #         if i % 10000 == 0:
@@ -515,8 +520,10 @@ def generate_skymap_sample_pc(p, pc_of_psi, ang_dists, good_indices, cut_out_ban
     #     #     print(psi)
     #     pcvals = pc_of_psi(abs(psi))
     #     pcvals /= np.sum(pcvals)
-    #     sub_counts[i] += np.random.choice(np.arange(len(pcvals)), size=1, p=pcvals)
+    # for i, pcval in enumerate(pcvals):
+    #     sub_counts[i] += np.random.choice(np.arange(len(pcval)), size=1, p=pcval)
 
+    # print(pcvals[np.arange(0, 100, 5), sub_counts[:100:5].astype(np.int64)])
     pixel_counts[good_indices] = sub_counts
 
     if save_output is True:
@@ -553,6 +560,10 @@ def likelihood(p, psh, subcounts, fluxes, fwimps, bg_count=np.array([0]), verbos
     # print(fwimps)
     S = np.zeros(fwimps.shape)
 
+    f = p['fwimp']
+
+    # pc1 = integrate.simps(psh * poisson.pmf(subcounts[np.newaxis, :], exposure * f * fluxes[:, np.newaxis] + bg_count[np.newaxis, :]), fluxes, axis=0)
+    # print(pc1[:100:5])
     for i, f in enumerate(fwimps):
         if verbose is True:
             print(i, '/', len(fwimps))
@@ -565,7 +576,7 @@ def likelihood(p, psh, subcounts, fluxes, fwimps, bg_count=np.array([0]), verbos
         # pc = np.trapz(psh[:, :, np.newaxis] * poisson.pmf(counts[np.newaxis, np.newaxis, :], exposure * f * fluxes[:, np.newaxis, np.newaxis] + bg_count[np.newaxis, :, np.newaxis]), fluxes, axis=0)
         # print('bad pc norm', np.sum(np.abs(np.sum(pc, axis=-1)-1) > 1e-8))
         # print(np.sum(pc, axis=-1))
-        # pc /= np.sum(pc, axis=-1)[:, np.newaxis]
+        # pc1 /= np.sum(pc1, axis=-1)[:, np.newaxis]
         # print(pc)
         # print(pc[np.arange(10), subcounts[:10] - subcounts.min()])
         # print(pc1[:10])
