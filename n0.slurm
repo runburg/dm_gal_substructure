@@ -2,7 +2,7 @@
 #SBATCH --job-name=swave128
 #SBATCH --partition=shared
 ## 3 day max run time for public partitions, except 4 hour max runtime for the sandbox partition
-#SBATCH --time=0-01:00:00 ## time format is DD-HH:MM:SS
+#SBATCH --time=1-05:00:00 ## time format is DD-HH:MM:SS
 ## task-per-node x cpus-per-task should not typically exceed core count on an individual node
 #SBATCH --nodes=1
 #SBATCH --tasks-per-node=1
@@ -24,4 +24,4 @@ module load lang/Python/3.7.2-intel-2018.5.274
 
 pip3 install scipy
 
-python3 source/n0_pc.py source/n0.params output/n0_pshfunc.npz
+python3 -u source/n0_pc.py source/n0.params output/n0_pshfunc_take2.npz
