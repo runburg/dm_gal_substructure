@@ -592,6 +592,49 @@ def likelihood(p, psh, subcounts, fluxes, fwimps, bg_count=np.array([0]), verbos
 
     return S
 
+
+def likelihood2d(p, psh, subcounts, fluxes, fwimps, begs, eg_bg_count=np.array([0]), g_bg_count=np.array([0]), verbose=False):
+    from scipy.stats import poisson
+
+    exposure = p['exposure']
+
+    # print(fwimps)
+    S = np.zeros((len(begs), len(fwimps)))
+
+    f = p['fwimp']
+
+    # pc1 = integrate.simps(psh * poisson.pmf(subcounts[np.newaxis, :], exposure * f * fluxes[:, np.newaxis] + bg_count[np.newaxis, :]), fluxes, axis=0)
+    # print(pc1[:100:5])
+    for i, beg in enumerate(begs):
+        for j, f in enumerate(fwimps):
+            if verbose is True:
+                print(i, '/', len(fwimps))
+            # p['fwimp'] = f
+
+            pc1 = integrate.simps(psh * poisson.pmf(subcounts[np.newaxis, :], exposure * f * fluxes[:, np.newaxis] + beg * eg_bg_count + g_bg_count[np.newaxis, :]), fluxes, axis=0)
+            # pc1 = np.trapz(psh * poisson.pmf(subcounts[np.newaxis, :], exposure * f * fluxes[:, np.newaxis] + bg_count[np.newaxis, :]), fluxes, axis=0)
+            # pc = np.trapz(1/f * psh * poisson.pmf(subcounts[np.newaxis, :], exposure * f * fluxes[:, np.newaxis] + bg_count[np.newaxis, :]), f * fluxes, axis=0)
+            # counts = np.arange(0, subcounts.max() + 50)
+            # pc = np.trapz(psh[:, :, np.newaxis] * poisson.pmf(counts[np.newaxis, np.newaxis, :], exposure * f * fluxes[:, np.newaxis, np.newaxis] + bg_count[np.newaxis, :, np.newaxis]), fluxes, axis=0)
+            # print('bad pc norm', np.sum(np.abs(np.sum(pc, axis=-1)-1) > 1e-8))
+            # print(np.sum(pc, axis=-1))
+            # pc1 /= np.sum(pc1, axis=-1)[:, np.newaxis]
+            # print(pc)
+            # print(pc[np.arange(10), subcounts[:10] - subcounts.min()])
+            # print(pc1[:10])
+            # print('dif between methods', pc1 - pc[np.arange(len(pc)), subcounts - subcounts.min()])
+            # pixel_probs = pc[np.arange(len(pc)), subcounts - subcounts.min()]
+            pixel_probs = pc1
+
+            # print('likelihood pc', pc[-1])
+            if np.any(pixel_probs <=0):
+                print('zero prob pixels', np.sum(pixel_probs <= 0), np.sum(pixel_probs == 0))
+
+            S[i, j] = -2 * np.sum(np.log(pixel_probs, where=(pixel_probs > 0)))
+
+    return S
+
+
 def poisson_likelihood(p, psh, subcounts, fluxes, fwimps, bg_count=np.array([0]), verbose=False):
     from scipy.stats import poisson
 
@@ -617,6 +660,36 @@ def poisson_likelihood(p, psh, subcounts, fluxes, fwimps, bg_count=np.array([0])
             print('zero prob pixels', np.sum(pixel_probs <= 0))
 
         S[i] = -2 * np.sum(np.log(pixel_probs, where=(pixel_probs>0)))
+
+    return S
+
+
+def poisson_likelihood2d(p, psh, subcounts, fluxes, fwimps, begs, eg_bg_count=np.array([0]), g_bg_count=np.array([0]), verbose=False):
+    from scipy.stats import poisson
+
+    exposure = p['exposure']
+
+    S = np.zeros((len(begs), len(fwimps)))
+
+    mean_f = integrate.simps(fluxes[:, np.newaxis] * psh, fluxes[:, np.newaxis], axis=0)
+    # mean_f = np.trapz(fluxes[:, np.newaxis] * psh, fluxes[:, np.newaxis], axis=0)
+    mmean_f = mean_f.mean()
+
+    for i, beg in enumerate(begs):
+        for j, f in enumerate(fwimps):
+            if verbose is True:
+                print(i, '/', len(fwimps))
+
+            pc = poisson.pmf(subcounts, exposure * f * mmean_f + beg * eg_bg_count + g_bg_count)
+
+            # pixel_probs = pc[np.arange(len(pc)), subcounts]
+            pixel_probs = pc
+
+            # print('likelihood pc', pc[-1])
+            if np.any(pixel_probs <=0):
+                print('zero prob pixels', np.sum(pixel_probs <= 0))
+
+            S[i, j] = -2 * np.sum(np.log(pixel_probs, where=(pixel_probs>0)))
 
     return S
 
