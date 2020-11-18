@@ -13,12 +13,13 @@ import utils
 import prob_dists as pd
 
 
-def p1_plot(params, psi=40, n_list=[-1, 0, 2, 4], outfile='./output/p1_plot.png'):
+def p1_plot(params, psi=40, n_list=[-1, 0, 2, 4], outfile='./output/p1_plot.png', colors=None):
     """Plot P1(F)."""
-    fig, ax = utils.plot_setup(1, 1, figsize=(12, 8), set_global_params=True)
+    fig, ax = utils.plot_setup(1, 1, figsize=(8, 6), set_global_params=True)
 
-    n_labels = {-1: "Som. enh.", 0: r"$s$-wave", 2: r"$p$-wave", 4: r"$d$-wave"}
-    colors = iter(cm.plasma(np.linspace(0.1, 1, num=len(n_list))))
+    n_labels = {-1: r"Som. enh. ($n=-1$)", 0: r"$s$-wave ($n=0$)", 2: r"$p$-wave", 4: r"$d$-wave"}
+    if colors is None:
+        colors = iter(cm.plasma(np.linspace(0.4, 1, num=len(n_list))))
 
     for n in n_list:
         mean_params = {'a': 77.4, 'b': 0.87 + 0.31 * n, 'c': -0.23 - 0.04 * n}
@@ -35,16 +36,16 @@ def p1_plot(params, psi=40, n_list=[-1, 0, 2, 4], outfile='./output/p1_plot.png'
 
     ax.set_xscale('log')
     ax.set_xlabel(r'Flux [photons cm$^{-2}$ yr$^{-1}$]')
-    ax.set_ylabel('Flux x Probability')
+    ax.set_ylabel(rf'$ F \times P^n_1(F)$ at $\psi={psi}^\circ$')
     ax.set_yscale('log')
     ax.set_ylim(bottom=1e-4, top=1)
     ax.set_xlim(left=1e-24, right=1e-5)
 
-    ax.set_title(r"Probability distribution for $M_{min}=0.01 M_\odot$, $\Psi=40^\circ$")
+    # ax.set_title(rf"P_1(F) for $M_{min}={{params['M_min']:.2f}} M_\odot$, $\Psi={{psi:.2f}}^\circ$")
 
     ax.grid()
     ax.set_xticks([1e-25 * 10**i for i in range(21)])
-    ax.legend()
+    ax.legend(loc='upper left')
 
     fig.savefig(outfile)
 
