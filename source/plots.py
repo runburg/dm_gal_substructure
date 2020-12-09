@@ -13,7 +13,7 @@ import utils
 import prob_dists as pd
 
 
-def p1_plot(params, psi=40, n_list=[-1, 0, 2, 4], outfile='./output/p1_plot.png', colors=None):
+def p1_plot(params, psi=40, n_list=[0, 2, 4, -1], outfile='./output/p1_plot.png', colors=None, shift=False):
     """Plot P1(F)."""
     fig, ax = utils.plot_setup(1, 1, figsize=(8, 6), set_global_params=True)
 
@@ -21,6 +21,7 @@ def p1_plot(params, psi=40, n_list=[-1, 0, 2, 4], outfile='./output/p1_plot.png'
     if colors is None:
         colors = iter(cm.plasma(np.linspace(0.4, 1, num=len(n_list))))
 
+    shiftval = 1
     for n in n_list:
         mean_params = {'a': 77.4, 'b': 0.87 + 0.31 * n, 'c': -0.23 - 0.04 * n}
         logmin = -24
@@ -29,6 +30,13 @@ def p1_plot(params, psi=40, n_list=[-1, 0, 2, 4], outfile='./output/p1_plot.png'
         probs = pd.p1(fluxes, psi, mean_params=mean_params, num=200)
         # probs = [p1(flux, 40) for flux in fluxes]
         func = fluxes * probs
+
+        if shift is True:
+            if n == 0:
+                shiftval = fluxes[func.argmax()]
+            else:
+                fluxes *= shiftval / fluxes[func.argmax()]
+
     #     print(normalization)
 
         ax.plot(fluxes, func, label=n_labels[n], color=next(colors))
