@@ -66,7 +66,7 @@ def conditional_luminosity_function(lnL, M, r, mean_params={}, sd_params={}, fsu
     return stats.norm.pdf(lnL, loc=mean, scale=sigma)
 
 
-def mass_distribution(M, r, A=1.2e4, beta=1.9, rs=21):
+def mass_distribution(M, r, A=1.2e4, beta=1.9, rs=21, **kwargs):
     """Return the mass distribution value.
 
     Inputs:
@@ -117,7 +117,7 @@ def p1(F, psi, num=100, R_G=220, M_min=0.01, M_max=1e10, d_solar=8.5, mean_param
         # radius from GC
         r = np.sqrt(l**2 + d_solar**2 - 2 * l * d_solar * np.cos(psi_rad))
 
-        return l**4 * mass_distribution(M, r) / Lsh * conditional_luminosity_function(np.log(Lsh), M, r, mean_params=mean_params, sd_params=sd_params, fsusy=fsusy)
+        return l**4 * mass_distribution(M, r, **kwargs) / Lsh * conditional_luminosity_function(np.log(Lsh), M, r, mean_params=mean_params, sd_params=sd_params, fsusy=fsusy)
 
     lvals = np.logspace(np.log10(1e-8), np.log10(l_max), num=num)
     mvals = np.logspace(np.log10(M_min), np.log10(M_max), num=num)
@@ -139,7 +139,7 @@ def mu(psi, R_G=220, M_min=0.01, M_max=1e10, d_solar=8.5, omega_pixel=(np.pi / 1
         # radius from GC
         r = np.sqrt(l**2 + d_solar**2 - 2 * l * d_solar * np.cos(psi_rad))
 
-        return l**2 * mass_distribution(M, r)
+        return l**2 * mass_distribution(M, r, **kwargs)
 
     lvals = np.logspace(np.log10(1e-8), np.log10(l_max), num=num)
     mvals = np.logspace(np.log10(M_min), np.log10(M_max), num=num)

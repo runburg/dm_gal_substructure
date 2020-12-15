@@ -27,5 +27,6 @@
 "iso_flux_bg": 0.0008939106670451649,
 "gal_flux_bg_file": "./output/gal_flux_bg.npy",
 "bg": 1,
-"beg": 1
+"beg": 1,
+"beta": 1.9
 }
