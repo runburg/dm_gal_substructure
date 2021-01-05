@@ -24,4 +24,4 @@ module load lang/Python/3.7.2-intel-2018.5.274
 
 pip3 install scipy
 
-python3 -u source/n0_pc.py source/n-1.params output/n-1_pshfunc_beta10.npz beta 1.0
+python3 -u source/n0_pc.py source/n-1.params output/n-1_pshfunc_beta11.npz beta 1.1

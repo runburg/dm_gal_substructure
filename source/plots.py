@@ -13,49 +13,55 @@ import utils
 import prob_dists as pd
 
 
-def p1_plot(params, psi=40, n_list=[0, 2, 4, -1], outfile='./output/p1_plot.png', colors=None, shift=False):
+def p1_plot(params, psi=40, n_list=[0, 2, 4, -1], outfile='./output/p1_plot.png', color=None, shift=False, betas=None):
     """Plot P1(F)."""
     fig, ax = utils.plot_setup(1, 1, figsize=(8, 6), set_global_params=True)
 
     n_labels = {-1: r"Som. enh. ($n=-1$)", 0: r"$s$-wave ($n=0$)", 2: r"$p$-wave", 4: r"$d$-wave"}
-    if colors is None:
-        colors = iter(cm.plasma(np.linspace(0.4, 1, num=len(n_list))))
+    if betas is None:
+        betas = [params['beta']]
 
-    shiftval = 1
-    for n in n_list:
-        mean_params = {'a': 77.4, 'b': 0.87 + 0.31 * n, 'c': -0.23 - 0.04 * n}
-        logmin = -24
-        logmax = -3
-        fluxes = np.logspace(logmin, logmax, num=(logmax - logmin) * 20)
-        probs = pd.p1(fluxes, psi, mean_params=mean_params, num=200)
-        # probs = [p1(flux, 40) for flux in fluxes]
-        func = fluxes * probs
+    for beta in betas:
+        shiftval = 1
+        if color is None:
+            colors = iter(cm.plasma(np.linspace(0.4, 1, num=len(n_list))))
+        else:
+            colors = iter(color)
 
-        if shift is True:
-            if n == 0:
-                shiftval = fluxes[func.argmax()]
-            else:
-                fluxes *= shiftval / fluxes[func.argmax()]
+        for n in n_list:
+            mean_params = {'a': 77.4, 'b': 0.87 + 0.31 * n, 'c': -0.23 - 0.04 * n}
+            logmin = -24
+            logmax = -3
+            fluxes = np.logspace(logmin, logmax, num=(logmax - logmin) * 20)
+            probs = pd.p1(fluxes, psi, mean_params=mean_params, num=200, beta=beta)
+            # probs = [p1(flux, 40) for flux in fluxes]
+            func = fluxes * probs
 
-    #     print(normalization)
+            if shift is True:
+                if n == 0:
+                    shiftval = fluxes[func.argmax()]
+                else:
+                    fluxes *= shiftval / fluxes[func.argmax()]
 
-        ax.plot(fluxes, func, label=n_labels[n], color=next(colors))
+        #     print(normalization)
+
+            ax.plot(fluxes, func, label=n_labels[n] + r'$\beta$=' + str(beta), color=next(colors))
         # print(f'slope near end for n={n}: {(func[-60]-func[-40])/(fluxes[-60]-fluxes[-40])}')
 
     ax.set_xscale('log')
     ax.set_xlabel(r'Flux [photons cm$^{-2}$ yr$^{-1}$]')
     ax.set_ylabel(rf'$ F \times P^n_1(F)$ at $\psi={psi}^\circ$')
     ax.set_yscale('log')
-    ax.set_ylim(bottom=1e-4, top=1)
-    ax.set_xlim(left=1e-24, right=1e-5)
-
     # ax.set_title(rf"P_1(F) for $M_{min}={{params['M_min']:.2f}} M_\odot$, $\Psi={{psi:.2f}}^\circ$")
 
     ax.grid()
     ax.set_xticks([1e-25 * 10**i for i in range(21)])
-    ax.legend(loc='upper left')
+    ax.set_xlim(left=1e-16, right=1e-5)
+    ax.set_ylim(bottom=1e-3, top=1)
 
-    fig.savefig(outfile)
+    lgd = ax.legend(loc='center left', bbox_to_anchor=(1.01, 0.5))
+
+    fig.savefig(outfile, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
     return fig, ax
 
