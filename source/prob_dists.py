@@ -81,6 +81,8 @@ def mass_distribution(M, r, A=1.2e4, beta=1.9, rs=21, **kwargs):
     """
     r_tilde = r / rs
 
+    print('beta is', beta)
+
     return A * M**(-beta) / (r_tilde * (1 + r_tilde)**2)
 
 
