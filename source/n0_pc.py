@@ -16,8 +16,10 @@ import utils
 
 params = p = utils.read_param_file(sys.argv[1])
 
-for v in range(3, len(sys.argv[3:]), 2):
+for v in range(3, len(sys.argv), 2):
     p[sys.argv[v]] = float(sys.argv[v+1])
+
+print('beta', p['beta'])
 
 pshop, fluxes, psis = pd.psh_of_psi(p, num_psi=100, infer_values=False)
 
