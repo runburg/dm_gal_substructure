@@ -40,7 +40,9 @@ def p1_plot(params, psi=40, n_list=[0, 2, 4, -1], outfile='./output/p1_plot.png'
             if shift is True:
                 if n == 0:
                     shiftval = fluxes[func.argmax()]
+                    print('shift is', shiftval)
                 else:
+                    print('Fluxes shifted by', shiftval/fluxes[func.argmax()], fluxes[func.argmax()])
                     fluxes *= shiftval / fluxes[func.argmax()]
 
         #     print(normalization)
