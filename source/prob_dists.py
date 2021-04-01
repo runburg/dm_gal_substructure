@@ -14,7 +14,7 @@ from scipy import interpolate as intp
 import random
 
 
-def gaussian_mean(M, r, a=77.4, b=0.87, c=-0.23, fsusy=1):
+def gaussian_mean(M, r, a=77.4, b=0.87, c=-0.23, fwimp=1):
     """Return mean of conditional luminosity distribution.
 
     Inputs:
@@ -28,7 +28,7 @@ def gaussian_mean(M, r, a=77.4, b=0.87, c=-0.23, fsusy=1):
     Returns:
         - mean of the gaussian distribution
     """
-    return a + b * np.log(M / 1e5) + c * np.log(r / 50) + np.log(fsusy)
+    return a + b * np.log(M / 1e5) + c * np.log(r / 50) + np.log(fwimp)
 
 
 def gaussian_sd(M, r, a=0.74, b=-0.003, c=0.011):
@@ -47,7 +47,7 @@ def gaussian_sd(M, r, a=0.74, b=-0.003, c=0.011):
     return a + b * np.log(M / 1e5) + c * np.log(r / 50)
 
 
-def conditional_luminosity_function(lnL, M, r, mean_params={}, sd_params={}, fsusy=1):
+def conditional_luminosity_function(lnL, M, r, mean_params={}, sd_params={}, fwimp=1):
     """Gives the value of the conditional luminosity function.
 
     Inputs:
@@ -60,7 +60,7 @@ def conditional_luminosity_function(lnL, M, r, mean_params={}, sd_params={}, fsu
     Returns:
         - value of the clf
     """
-    mean = gaussian_mean(M, r, **mean_params, fsusy=fsusy)
+    mean = gaussian_mean(M, r, **mean_params, fwimp=fwimp)
     sigma = gaussian_sd(M, r, **sd_params)
 
     return stats.norm.pdf(lnL, loc=mean, scale=sigma)
@@ -86,7 +86,7 @@ def mass_distribution(M, r, A=1.2e4, beta=1.9, rs=21, **kwargs):
     return A * M**(-beta) / (r_tilde * (1 + r_tilde)**2)
 
 
-def p1(F, psi, num=100, R_G=220, M_min=0.01, M_max=1e10, d_solar=8.5, mean_params={}, sd_params={}, fsusy=1, **kwargs):
+def p1(F, psi, num=100, R_G=220, M_min=0.01, M_max=1e10, d_solar=8.5, mean_params={}, sd_params={}, fwimp=1, **kwargs):
     """Return the unnormalized value of the probability distribution of one subhalo.
 
     Inputs:
@@ -119,7 +119,7 @@ def p1(F, psi, num=100, R_G=220, M_min=0.01, M_max=1e10, d_solar=8.5, mean_param
         # radius from GC
         r = np.sqrt(l**2 + d_solar**2 - 2 * l * d_solar * np.cos(psi_rad))
 
-        return l**4 * mass_distribution(M, r, **kwargs) / Lsh * conditional_luminosity_function(np.log(Lsh), M, r, mean_params=mean_params, sd_params=sd_params, fsusy=fsusy)
+        return l**4 * mass_distribution(M, r, **kwargs) / Lsh * conditional_luminosity_function(np.log(Lsh), M, r, mean_params=mean_params, sd_params=sd_params, fwimp=fwimp)
 
     lvals = np.logspace(np.log10(1e-8), np.log10(l_max), num=num)
     mvals = np.logspace(np.log10(M_min), np.log10(M_max), num=num)

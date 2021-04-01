@@ -13,42 +13,57 @@ import utils
 import prob_dists as pd
 
 
-def p1_plot(params, psi=40, n_list=[0, 2, 4, -1], outfile='./output/p1_plot.png', color=None, shift=False, betas=None):
+def p1_plot(params, psi=40, n_list=[0, 2, 4, -1], outfile='./output/p1_plot.png', color=None, shift=False, betas=None, fwimps=None, residuals=True):
     """Plot P1(F)."""
-    fig, ax = utils.plot_setup(1, 1, figsize=(8, 6), set_global_params=True)
+    if residuals is True:
+        fig, axs = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+        ax = axs[0]
+    else:
+        fig, ax = utils.plot_setup(1, 1, figsize=(8, 6), set_global_params=True)
 
     n_labels = {-1: r"Som. enh. ($n=-1$)", 0: r"$s$-wave ($n=0$)", 2: r"$p$-wave", 4: r"$d$-wave"}
     if betas is None:
-        betas = [params['beta']]
+        betas = [params['beta']] * len(n_list)
+    if fwimps is None:
+        fwimps = params['fwimp'] * len(n_list)
 
-    for beta in betas:
+    if color is None:
+        colors = iter(cm.plasma(np.linspace(0.4, 1, num=len(n_list))))
+    else:
+        colors = iter(color)
+
+    residues = {}
+    for n, beta, fwimp in zip(n_list, betas, fwimps):
         shiftval = 1
-        if color is None:
-            colors = iter(cm.plasma(np.linspace(0.4, 1, num=len(n_list))))
-        else:
-            colors = iter(color)
 
-        for n in n_list:
-            mean_params = {'a': 77.4, 'b': 0.87 + 0.31 * n, 'c': -0.23 - 0.04 * n}
-            logmin = -24
-            logmax = -3
-            fluxes = np.logspace(logmin, logmax, num=(logmax - logmin) * 20)
-            probs = pd.p1(fluxes, psi, mean_params=mean_params, num=200, beta=beta)
-            # probs = [p1(flux, 40) for flux in fluxes]
-            func = fluxes * probs
+        mean_params = {'a': 77.4, 'b': 0.87 + 0.31 * n, 'c': -0.23 - 0.04 * n}
+        logmin = -24
+        logmax = -3
+        fluxes = np.logspace(logmin, logmax, num=(logmax - logmin) * 20)
+        probs = pd.p1(fluxes, psi, mean_params=mean_params, num=200, beta=beta, fwimp=fwimp)
+        # probs = [p1(flux, 40) for flux in fluxes]
+        func = fluxes * probs
 
-            if shift is True:
-                if n == 0:
-                    shiftval = fluxes[func.argmax()]
-                    print('shift is', shiftval)
-                else:
-                    print('Fluxes shifted by', shiftval/fluxes[func.argmax()], fluxes[func.argmax()])
-                    fluxes *= shiftval / fluxes[func.argmax()]
+        if shift is True:
+            if n == 0:
+                shiftval = fluxes[func.argmax()]
+                print('shift is', shiftval)
+            else:
+                print('Fluxes shifted by', shiftval/fluxes[func.argmax()], fluxes[func.argmax()])
+                fluxes *= shiftval / fluxes[func.argmax()]
 
-        #     print(normalization)
+    #     print(normalization)
 
-            ax.plot(fluxes, func, label=n_labels[n] + r'$\beta$=' + str(beta), color=next(colors))
+        ax.plot(fluxes, func, label=n_labels[n] + r'$\beta$=' + str(beta), color=next(colors))
+
+        if residuals is True:
+            residues[n] = func
         # print(f'slope near end for n={n}: {(func[-60]-func[-40])/(fluxes[-60]-fluxes[-40])}')
+
+    if residuals is True:
+        axs[-1].plot(fluxes, residues[n_list[0]]-residues[n_list[1]])
+        axs[-1].axhline(0, color='gray', lw=1)
+        axs[-1].set_ylabel(rf'Residual of $n_{n_list[0]} - n_{{{n_list[1]}}}$')
 
     ax.set_xscale('log')
     ax.set_xlabel(r'Flux [photons cm$^{-2}$ yr$^{-1}$]')
