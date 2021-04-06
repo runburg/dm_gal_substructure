@@ -61,9 +61,10 @@ def p1_plot(params, psi=40, n_list=[0, 2, 4, -1], outfile='./output/p1_plot.png'
         # print(f'slope near end for n={n}: {(func[-60]-func[-40])/(fluxes[-60]-fluxes[-40])}')
 
     if residuals is True:
-        axs[-1].plot(fluxes, residues[n_list[0]]-residues[n_list[1]])
+        axs[-1].plot(fluxes, (residues[n_list[0]]-residues[n_list[1]]) / residues[n_list[0]])
         axs[-1].axhline(0, color='gray', lw=1)
-        axs[-1].set_ylabel(rf'Residual of $n_{n_list[0]} - n_{{{n_list[1]}}}$')
+        axs[-1].set_ylabel(rf'$(n_{n_list[0]} - n_{{{n_list[1]}}}) / n_{n_list[0]}$')
+        axs[-1].set_ylim(top=0.4)
 
     ax.set_xscale('log')
     ax.set_xlabel(r'Flux [photons cm$^{-2}$ yr$^{-1}$]')
