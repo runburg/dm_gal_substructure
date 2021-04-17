@@ -38,12 +38,13 @@ def p1_plot(params, psi=40, n_list=[0, 2, 4, -1], outfile='./output/p1_plot.png'
 
         mean_params = {'a': 77.4, 'b': 0.87 + 0.31 * n, 'c': -0.23 - 0.04 * n}
         logmin = -24
-        logmax = -3
+        logmax = 3
         fluxes = np.logspace(logmin, logmax, num=(logmax - logmin) * 20)
         probs = pd.p1(fluxes, psi, mean_params=mean_params, num=200, beta=beta, fwimp=fwimp)
         # probs = [p1(flux, 40) for flux in fluxes]
         func = fluxes * probs
 
+        print('integral for', n, np.trapz(func, fluxes))
         if shift is True:
             if n == 0:
                 shiftval = fluxes[func.argmax()]
@@ -74,8 +75,8 @@ def p1_plot(params, psi=40, n_list=[0, 2, 4, -1], outfile='./output/p1_plot.png'
 
     ax.grid()
     ax.set_xticks([1e-25 * 10**i for i in range(21)])
-    ax.set_xlim(left=1e-16, right=1e-5)
-    ax.set_ylim(bottom=1e-3, top=1)
+    ax.set_xlim(left=1e-16, right=100)
+    ax.set_ylim(bottom=1e-8, top=1)
 
     lgd = ax.legend(loc='center left', bbox_to_anchor=(1.01, 0.5))
 
@@ -84,25 +85,25 @@ def p1_plot(params, psi=40, n_list=[0, 2, 4, -1], outfile='./output/p1_plot.png'
     return fig, ax
 
 
-def p1_slope_plot(params, psi=40, n_list=[-1, 0, 2, 4], outfile='./output/p1_slope_plot.png'):
-    """Plot slope of P1(F)."""
-    fig, ax = utils.plot_setup(1, 1, figsize=(12, 8), set_global_params=True)
+    def p1_slope_plot(params, psi=40, n_list=[-1, 0, 2, 4], outfile='./output/p1_slope_plot.png'):
+        """Plot slope of P1(F)."""
+        fig, ax = utils.plot_setup(1, 1, figsize=(12, 8), set_global_params=True)
 
-    n_labels = {-1: "Som. enh.", 0: r"$s$-wave", 2: r"$p$-wave", 4: r"$d$-wave"}
-    colors = iter(cm.plasma(np.linspace(0.1, 1, num=len(n_list))))
+        n_labels = {-1: "Som. enh.", 0: r"$s$-wave", 2: r"$p$-wave", 4: r"$d$-wave"}
+        colors = iter(cm.plasma(np.linspace(0.1, 1, num=len(n_list))))
 
-    for n in n_list:
-        mean_params = {'a': 77.4, 'b': 0.87 + 0.31 * n, 'c': -0.23 - 0.04 * n}
-        logmin = -24
-        logmax = -3
-        fluxes = np.logspace(logmin, logmax, num=(logmax - logmin) * 20)
-        probs = pd.p1(fluxes, psi, mean_params=mean_params, num=200)
+        for n in n_list:
+            mean_params = {'a': 77.4, 'b': 0.87 + 0.31 * n, 'c': -0.23 - 0.04 * n}
+            logmin = -24
+            logmax = -3
+            fluxes = np.logspace(logmin, logmax, num=(logmax - logmin) * 20)
+            probs = pd.p1(fluxes, psi, mean_params=mean_params, num=200)
 
-        func = np.log10(probs)
-        col = next(colors)
+            func = np.log10(probs)
+            col = next(colors)
 
-        ax.plot(fluxes[:-1], (func[:-1]-func[1:])/(np.log10(fluxes[:-1])-np.log10(fluxes[1:])), label=n_labels[n], color=col)
-        ax.axhline(-1.03/(1+.36*n)-1, color=col)
+            ax.plot(fluxes[:-1], (func[:-1]-func[1:])/(np.log10(fluxes[:-1])-np.log10(fluxes[1:])), label=n_labels[n], color=col)
+            ax.axhline(-1.03/(1+.36*n)-1, color=col)
 
     ax.set_xscale('log')
     ax.set_xlabel(r'Flux [photons cm$^{-2}$ yr$^{-1}$]')
