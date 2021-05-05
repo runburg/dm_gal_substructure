@@ -55,7 +55,8 @@ def p1_plot(params, psi=40, n_list=[0, 2, 4, -1], outfile='./output/p1_plot.png'
 
     #     print(normalization)
 
-        ax.plot(fluxes, func, label=n_labels[n] + r'$\beta$=' + str(beta), color=next(colors))
+        # ax.plot(fluxes, func, label=n_labels[n] + r'$\beta$=' + str(beta), color=next(colors))
+        ax.plot(fluxes, func, label=n_labels[n], color=next(colors))
 
         if residuals is True:
             residues[n] = func
@@ -74,11 +75,12 @@ def p1_plot(params, psi=40, n_list=[0, 2, 4, -1], outfile='./output/p1_plot.png'
     # ax.set_title(rf"P_1(F) for $M_{min}={{params['M_min']:.2f}} M_\odot$, $\Psi={{psi:.2f}}^\circ$")
 
     ax.grid()
-    ax.set_xticks([1e-25 * 10**i for i in range(21)])
-    ax.set_xlim(left=1e-16, right=100)
+    ax.set_xticks([1e-25 * 10**i for i in range(1, 29, 2)])
+    ax.set_xlim(left=1e-16, right=1e-3)
     ax.set_ylim(bottom=1e-8, top=1)
 
-    lgd = ax.legend(loc='center left', bbox_to_anchor=(1.01, 0.5))
+    # lgd = ax.legend(loc='center left', bbox_to_anchor=(1.01, 0.5))
+    lgd = ax.legend(loc='upper right')
 
     fig.savefig(outfile, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
