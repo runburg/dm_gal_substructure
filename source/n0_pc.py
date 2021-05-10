@@ -23,6 +23,6 @@ for v in range(3, len(sys.argv), 2):
 print('beta', p['beta'])
 print('M_min', p['M_min'])
 
-pshop, fluxes, psis = pd.psh_of_psi(p, num_psi=100, infer_values=False)
+pshop, fluxes, psis = pd.psh_of_psi(p, num_psi=50, infer_values=False)
 
 psh_2dfunc = pd.interp_and_save_psh(p, pshop, fluxes, psis, outfile=sys.argv[2])
