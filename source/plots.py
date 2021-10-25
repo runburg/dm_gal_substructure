@@ -70,7 +70,7 @@ def p1_plot(params, psi=40, n_list=[0, 2, 4, -1], outfile='./output/p1_plot.png'
 
     ax.set_xscale('log')
     ax.set_xlabel(r'Flux [photons cm$^{-2}$ yr$^{-1}$]')
-    ax.set_ylabel(rf'$ F \times P^n_1(F)$ at $\psi={psi}^\circ$')
+    ax.set_ylabel(rf'$ F \times P_1(F; n, \psi={psi}^\circ)$')
     ax.set_yscale('log')
     # ax.set_title(rf"P_1(F) for $M_{min}={{params['M_min']:.2f}} M_\odot$, $\Psi={{psi:.2f}}^\circ$")
 

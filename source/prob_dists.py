@@ -292,8 +292,8 @@ def psh_s(ang_dists, input_file='./output/n0_pshfunc.npz', return_all=False):
         psh2d = f['psh']
 
     # restrict to valid range of flux calculation
-    low_lim = 0
-    valid_lim = -55
+    low_lim = 30
+    valid_lim = -100
     fluxes = fluxes[low_lim:valid_lim]
     psh2d = psh2d[low_lim:valid_lim]
 
@@ -313,7 +313,7 @@ def psh_s(ang_dists, input_file='./output/n0_pshfunc.npz', return_all=False):
     return psh
 
 
-def psh_som(ang_dists, input_file='./output/n-1_pshfunc.npz', return_all=False):
+def psh_som(ang_dists, input_file='./output/n-1_pshfunc.npz', return_all=False, rescale=1):
     """
     Compute P_sh for sommerfeld annihilation.
     """
@@ -323,10 +323,10 @@ def psh_som(ang_dists, input_file='./output/n-1_pshfunc.npz', return_all=False):
         psh2d = f['psh']
 
     # restrict to valid range of flux calculation
-    low_lim = 150
-    valid_lim = -45
-    fluxes = fluxes[low_lim:valid_lim]
-    psh2d = psh2d[low_lim:valid_lim]
+    low_lim = 1
+    valid_lim = -100
+    fluxes = fluxes[low_lim:valid_lim] * rescale
+    psh2d = psh2d[low_lim:valid_lim] / rescale
 
     # get psh data as function of psi and flux
     psh2d[psh2d < 0] = 0
@@ -490,6 +490,7 @@ def generate_skymap_sample_pc_3(p, pc_of_psi, ang_dists, good_indices, cut_out_b
 
     return pixel_counts
 
+
 def generate_skymap_sample_pc(p, pc_of_psi, ang_dists, good_indices, cut_out_band=40, output_path='./output/', print_updates=False, save_output=False, return_subcounts=False, bg_counts=[]):
     import healpy
     nside = p['nside']
@@ -507,6 +508,9 @@ def generate_skymap_sample_pc(p, pc_of_psi, ang_dists, good_indices, cut_out_ban
     # pcvals = pc_of_psi(np.abs(ang_dists))
     pcvals = pc_of_psi
     # pcvals /= np.sum(pcvals, axis=-1)[:, np.newaxis]
+
+    counts = np.arange(len(pcvals[0]))
+    print('<N_true> is', np.sum(pcvals * counts, axis=1).mean())
 
     cum_pc = pcvals.cumsum(axis=1)
 
